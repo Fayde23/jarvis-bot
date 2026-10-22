@@ -2,7 +2,7 @@ const http = require('http');
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 
-// Render требует, чтобы веб-сервис слушал порт, иначе он его вырубает
+// HTTP-сервер для жизни на Render
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Jarvis bot is active!\n');
@@ -12,33 +12,35 @@ server.listen(PORT, () => {
   console.log(`HTTP server is running on port ${PORT}`);
 });
 
-// Запуск Майнкрафт-бота
 const bot = mineflayer.createBot({
-  host: 'UlquiorraLizun.aternos.me', // твой адрес Aternos
-  port: 42793,                        // твой порт
+  host: 'UlquiorraLizun.aternos.me',
+  port: 42793,
   username: 'Jarvis',
   version: '1.16.5',
-  checkTimeoutInterval: 120000,
-  brand: 'fml,forge'
+  checkTimeoutInterval: 120000
 });
 
 bot.loadPlugin(pathfinder);
 
+// Продвинутый перехватчик FML/Forge хендшейка для Arclight
 bot._client.on('custom_payload', (packet) => {
-  if (packet.channel) {
-    if (packet.channel.startsWith('fml:') || packet.channel.startsWith('forge:')) {
-      try {
-        bot._client.write('custom_payload', {
-          channel: packet.channel,
-          data: Buffer.from([0])
-        });
-      } catch (e) {}
-    }
+  const channel = packet.channel;
+  if (!channel) return;
+
+  // Отвечаем на форджевские каналы хендшейка
+  if (channel.startsWith('fml:') || channel.startsWith('forge:')) {
+    try {
+      // Отправляем пустой ACK или подтверждение пакета, чтобы сервер не кикал
+      bot._client.write('custom_payload', {
+        channel: channel,
+        data: Buffer.from([0])
+      });
+    } catch (e) {}
   }
 });
 
 bot.once('spawn', () => {
-  console.log('Джарвис успешно развернулся в облаке и зашел на сервер!');
+  console.log('Джарвис успешно прорвал оборону Arclight и зашел на сервер!');
   bot.chat('Системы инициализированы. Облачный протокол активен, босс.');
   
   const defaultMove = new Movements(bot);
