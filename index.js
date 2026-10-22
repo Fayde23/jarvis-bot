@@ -1,6 +1,18 @@
+const http = require('http');
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 
+// Render требует, чтобы веб-сервис слушал порт, иначе он его вырубает
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Jarvis bot is active!\n');
+});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`HTTP server is running on port ${PORT}`);
+});
+
+// Запуск Майнкрафт-бота
 const bot = mineflayer.createBot({
   host: 'UlquiorraLizun.aternos.me', // твой адрес Aternos
   port: 42793,                        // твой порт
@@ -12,15 +24,13 @@ const bot = mineflayer.createBot({
 
 bot.loadPlugin(pathfinder);
 
-// Перехватываем FML2 / Forge хендшейк пакеты и подтверждаем их, чтобы Arclight не кикал
 bot._client.on('custom_payload', (packet) => {
   if (packet.channel) {
-    // Отвечаем на сетевые каналы Forge/FML корректным пустым или подтверждающим буфером
     if (packet.channel.startsWith('fml:') || packet.channel.startsWith('forge:')) {
       try {
         bot._client.write('custom_payload', {
           channel: packet.channel,
-          data: Buffer.from([0]) // Ответ-подтверждение для протокола
+          data: Buffer.from([0])
         });
       } catch (e) {}
     }
@@ -41,7 +51,6 @@ bot.on('chat', (username, message) => {
 
   const msg = message.toLowerCase();
 
-  // Базовые команды для теста
   if (msg.includes('джарвис, за мной')) {
     const player = bot.players[username]?.entity;
     if (!player) {
